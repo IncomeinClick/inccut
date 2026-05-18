@@ -1,0 +1,185 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>inccut — ตัดต่อวิดีโอ</title>
+<link rel="stylesheet" href="/style.css">
+</head>
+<body>
+
+<header>
+  <div class="logo" id="home-link">inccut <span class="muted">— ตัดต่อง่ายๆ</span></div>
+  <div class="header-right">
+    <span id="filename" class="filename"></span>
+    <span id="save-status" class="save-status" hidden></span>
+    <button id="save-btn" hidden class="primary">💾 Save</button>
+    <button id="back-btn" hidden>← โปรเจกต์ทั้งหมด</button>
+  </div>
+</header>
+
+<main>
+
+<section id="home-screen">
+  <h2 class="screen-title">โปรเจกต์ของผม</h2>
+  <div id="projects-grid" class="projects-grid">
+    <a class="project-card new-card" id="new-project-btn">
+      <div class="card-icon">+</div>
+      <div class="card-name">โปรเจกต์ใหม่</div>
+      <div class="card-meta">อัปโหลดวิดีโอ หรือเสียง</div>
+    </a>
+  </div>
+  <div id="projects-empty" class="empty" hidden>ยังไม่มีโปรเจกต์ — กด "+" เพื่อเริ่ม</div>
+</section>
+
+<section id="upload-screen" hidden>
+  <label class="dropzone" id="dropzone">
+    <input type="file" id="file-input"
+      accept="video/mp4,video/x-matroska,video/quicktime,video/webm,audio/mpeg,audio/mp4,audio/wav,audio/ogg,audio/flac,.mkv,.mp4,.mov,.webm,.m4v,.avi,.mp3,.m4a,.aac,.wav,.ogg,.flac,.opus">
+    <div class="dz-icon">⬆</div>
+    <div class="dz-text">เลือกวิดีโอหรือเสียง หรือลากมาวาง</div>
+    <div class="dz-hint">วิดีโอ: MP4, MKV, MOV, WebM — เสียง: MP3, M4A, WAV, OGG, FLAC, OPUS</div>
+  </label>
+  <div id="upload-progress" hidden>
+    <div class="progress-bar"><div class="progress-fill"></div></div>
+    <div class="progress-label" id="progress-label">กำลังอัปโหลด...</div>
+  </div>
+</section>
+
+<section id="editor" hidden>
+  <div class="video-wrap">
+    <div class="stage" id="stage">
+      <video id="video" preload="auto" playsinline></video>
+      <video id="video-buffer" preload="auto" playsinline class="buffer"></video>
+      <div class="drag-hint">ลากเพื่อขยับ · ใช้ slider ปรับขนาด</div>
+    </div>
+  </div>
+
+  <div class="canvas-controls">
+    <span class="cc-label">Canvas</span>
+    <input type="number" id="canvas-w" min="16" max="7680" step="2" title="Canvas width">
+    <span class="cc-x">×</span>
+    <input type="number" id="canvas-h" min="16" max="7680" step="2" title="Canvas height">
+    <span class="cc-presets">
+      <button data-aspect="9:16" title="แนวตั้ง 1080×1920">9:16</button>
+      <button data-aspect="1:1" title="จัตุรัส 1080×1080">1:1</button>
+      <button data-aspect="4:5" title="IG 1080×1350">4:5</button>
+      <button data-aspect="16:9" title="แนวนอน 1920×1080">16:9</button>
+    </span>
+    <span class="spacer"></span>
+    <span class="cc-label">Scale</span>
+    <input type="range" id="clip-scale" min="0.1" max="5" step="0.01" value="1">
+    <span id="clip-scale-display" class="cc-value">1.00×</span>
+    <button id="clip-reset" title="คืนค่าตำแหน่ง + ขนาด">↺</button>
+  </div>
+
+  <div class="controls">
+    <button id="play-btn" class="primary">▶ Play</button>
+    <button id="split-btn">✂ Split <kbd>S</kbd></button>
+    <button id="delete-btn" disabled>🗑 Delete <kbd>Del</kbd></button>
+    <button id="auto-silence-btn" title="ตัดช่วงเงียบทิ้งอัตโนมัติทุก clip">🔇 ตัด silence</button>
+    <span id="time-display" class="time">0:00 / 0:00</span>
+    <span class="spacer"></span>
+    <button id="add-video-btn">+ เพิ่มวิดีโอ</button>
+    <input type="file" id="add-video-input" hidden
+      accept="video/mp4,video/x-matroska,video/quicktime,video/webm,.mkv,.mp4,.mov,.webm,.m4v,.avi">
+    <button id="add-music-btn">🎵 เพิ่มเพลง</button>
+    <input type="file" id="add-music-input" hidden
+      accept="audio/mpeg,audio/mp4,audio/wav,audio/ogg,audio/flac,.mp3,.m4a,.aac,.wav,.ogg,.flac,.opus">
+    <button id="export-btn" class="primary">⬇ Export MP4</button>
+  </div>
+
+  <div class="timeline-wrap">
+    <div class="timeline-toolbar">
+      <div class="videos-panel" id="videos-panel"></div>
+      <div class="zoom-controls">
+        <button id="zoom-out" title="Zoom out">−</button>
+        <span id="zoom-display">100%</span>
+        <button id="zoom-in" title="Zoom in">+</button>
+        <button id="zoom-fit" title="Fit ทั้งหมด">⇔</button>
+      </div>
+    </div>
+    <div class="timeline" id="timeline">
+      <div class="timeline-scroll" id="timeline-scroll">
+        <div class="timeline-content" id="timeline-content">
+          <div class="timeline-ruler" id="timeline-ruler" title="ลากเพื่อเลื่อน playhead"></div>
+          <div class="clips" id="clips"></div>
+          <div class="music-clips" id="music-clips"></div>
+          <div class="playhead" id="playhead"></div>
+        </div>
+      </div>
+    </div>
+    <div class="hint">
+      ลากเส้นแดง = เลื่อน · คลิก clip = เลือก · ลาก clip = เรียงใหม่ · <kbd>Ctrl/⌘+Wheel</kbd> = zoom
+      &nbsp;·&nbsp; <kbd>Space</kbd> เล่น/หยุด · <kbd>S</kbd> ตัด · <kbd>Del</kbd> ลบ
+      &nbsp;·&nbsp; <kbd>Ctrl/⌘+Z</kbd> ย้อน · <kbd>Ctrl/⌘+Shift+Z</kbd> redo
+      &nbsp;·&nbsp; <kbd>Ctrl/⌘+C</kbd> copy · <kbd>Ctrl/⌘+V</kbd> paste · <kbd>Ctrl/⌘+S</kbd> save
+    </div>
+  </div>
+</section>
+
+</main>
+
+<div id="export-options-modal" class="modal" hidden>
+  <div class="modal-card">
+    <h3>Export MP4</h3>
+    <label class="field">
+      <span>ชื่อไฟล์</span>
+      <input type="text" id="export-filename" placeholder="my-video-edit.mp4">
+    </label>
+    <p class="hint">ตัดแบบ frame-accurate (re-encode) — จุดตัดไม่คลาด เสียงต่อกันสนิท ใช้เวลาประมาณ 1 ใน 5 ของความยาววีดีโอ</p>
+    <div class="modal-actions">
+      <button id="export-cancel">ยกเลิก</button>
+      <button id="export-go" class="primary">เริ่ม Export</button>
+    </div>
+  </div>
+</div>
+
+<div id="export-modal" class="modal" hidden>
+  <div class="modal-card">
+    <h3>กำลัง Export</h3>
+    <div class="progress-bar"><div class="progress-fill" id="export-fill"></div></div>
+    <div class="progress-label" id="export-label">กำลังเริ่ม...</div>
+  </div>
+</div>
+
+<div id="auto-silence-modal" class="modal" hidden>
+  <div class="modal-card">
+    <h3>ตัด silence อัตโนมัติ</h3>
+    <p class="hint">สแกนทุก clip แล้วลบช่วงที่เสียงต่ำกว่าเกณฑ์ (ใช้ peaks ที่มีอยู่ — ไม่ต้องอัปโหลดใหม่)</p>
+    <label class="field">
+      <span>ระดับเสียงที่ถือว่าเงียบ <small>(0.005 = เงียบสนิท, 0.05 = อนุญาตเสียง ambient)</small></span>
+      <input type="number" id="silence-threshold" step="0.005" min="0.001" max="0.2" value="0.05">
+    </label>
+    <label class="field">
+      <span>ความยาวขั้นต่ำของช่วงเงียบ <small>(วินาที — ป้องกันการตัดช่วงหายใจสั้นๆ)</small></span>
+      <input type="number" id="silence-min-dur" step="0.1" min="0.1" max="10" value="0.3">
+    </label>
+    <label class="field">
+      <span>เผื่อขอบ <small>(วินาที — เก็บเสียงไว้ก่อน/หลังจุดตัดเพื่อไม่ให้กระชาก)</small></span>
+      <input type="number" id="silence-pad" step="0.05" min="0" max="1" value="0.05">
+    </label>
+    <div class="modal-actions">
+      <button id="auto-silence-cancel">ยกเลิก</button>
+      <button id="auto-silence-go" class="primary">ตัดเลย</button>
+    </div>
+  </div>
+</div>
+
+<div id="rename-modal" class="modal" hidden>
+  <div class="modal-card">
+    <h3>เปลี่ยนชื่อโปรเจกต์</h3>
+    <label class="field">
+      <span>ชื่อใหม่</span>
+      <input type="text" id="rename-input">
+    </label>
+    <div class="modal-actions">
+      <button id="rename-cancel">ยกเลิก</button>
+      <button id="rename-go" class="primary">บันทึก</button>
+    </div>
+  </div>
+</div>
+
+<script src="/app.js"></script>
+</body>
+</html>

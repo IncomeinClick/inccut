@@ -14,7 +14,7 @@ from typing import Optional
 import bcrypt
 import numpy as np
 from fastapi import BackgroundTasks, FastAPI, File, Form, HTTPException, Request, UploadFile
-from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, RedirectResponse, Response
+from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, RedirectResponse, Response, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 from starlette.middleware.sessions import SessionMiddleware
@@ -610,8 +610,8 @@ async def get_preview(video_id: str, request: Request):
                 remaining -= len(chunk)
                 yield chunk
 
-    return Response(
-        content=b"".join(iter_file()),
+    return StreamingResponse(
+        iter_file(),
         status_code=206,
         media_type="video/mp4",
         headers={
